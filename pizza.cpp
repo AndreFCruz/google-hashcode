@@ -16,7 +16,7 @@ typedef unsigned int uint;
 
 
 
-/* Fins all pairs of numbers whose product is n
+/* Finds all ordered pairs of numbers whose product is n
  */
 vector<pair<uint, uint>> find_products(uint n) {
     vector<pair<uint, uint>> result;
@@ -30,6 +30,8 @@ vector<pair<uint, uint>> find_products(uint n) {
     return result;
 }
 
+/* Finds all ordered pairs of numbers whose product is in range [2, n]
+ */
 vector<pair<uint, uint>> find_all_products(uint n) {
     vector<pair<uint,uint>> result;
     
@@ -42,14 +44,11 @@ vector<pair<uint, uint>> find_all_products(uint n) {
 }
 
 class Slice {
-private:
+public:
     pair<uint, uint> rows;
     pair<uint, uint> cols;
     
-public:
-    Slice(uint row_i, uint row_f, uint col_i, uint col_f) : rows(make_pair(row_i, row_f)), cols(make_pair(col_i, col_f)) {
-        cerr << "New Slice: " << row_i << " " << row_f << " " << col_i << " " << col_f << endl;
-    }
+    Slice(uint row_i, uint row_f, uint col_i, uint col_f) : rows(make_pair(row_i, row_f)), cols(make_pair(col_i, col_f)) {}
     
     friend ostream & operator<<(ostream & out, const Slice & s) {
         out << s.rows.first << " " << s.rows.second << " " << s.cols.first << " " << s.cols.second;
@@ -61,7 +60,7 @@ class Pizza {
 private:
     uint rows;
     uint cols;
-    uint min_ing;	// minimum number of ingredients per slice
+    uint min_ings;	// minimum number of ingredients per slice
     uint max_cells;	// maximum number of cells per slice
     vector<string> contents;	// Matrix of ingredients
     vector<Slice> slices;
@@ -79,7 +78,7 @@ private:
         if (ri > rf || ci > cf || rf >= rows || cf >= cols)
             return false;
         
-        bool tomatoes = false, mushrooms = false;
+        uint tomatoes = 0, mushrooms = 0;
         
         for (uint row = ri; row <= rf; ++row) {
             for (uint col = ci; col <= cf; ++col) {
@@ -87,18 +86,18 @@ private:
                     return false;
                 }
                 if (contents[row][col] == 'T')
-                    tomatoes = true;
+                    tomatoes++;
                 else if (contents[row][col] == 'M')
-                    mushrooms = true;
+                    mushrooms++;
             }
         }
         
-        return (tomatoes && mushrooms);
+        return (tomatoes >= min_ings && mushrooms >= min_ings);
     }
     
 public:
     Pizza(ifstream & ifs) {
-        ifs >> rows >> cols >> min_ing >> max_cells;
+        ifs >> rows >> cols >> min_ings >> max_cells;
         ifs.ignore(3, '\n');
         
         string line;
@@ -149,25 +148,33 @@ public:
                 
                 slices.emplace_back(row, row + choice.first - 1, col, col + choice.second - 1);
                 markVisited(row, row + choice.first - 1, col, col + choice.second - 1);
-                
-                /* for optimization purposes
-                 row += choice.first - 1;
-                 col += choice.second - 1;
-                 */
+                row++;
+                col++;
             }
             
-            if (! (row < rows && col < cols))
+            if (row >= rows)
                 finished = true;
         }
-        
+    }
+    
+    void printMetrics() const {
         uint score = 0;
         for (uint r = 0; r < rows; ++r) {
             for (uint c = 0; c < cols; ++c) {
-                if (! visited[r][c])
+                if (visited[r][c])
                     score++;
             }
         }
-        cerr << "**SCORE** " << score << endl;
+        uint sliced = 0;
+        for (const auto & s : slices) {
+            sliced += (s.rows.second - s.rows.first + 1) * (s.cols.second - s.cols.first + 1);
+        }
+        
+        cout << "**SCORE** " << score << endl;
+        cout << "**SLICED** " << score << endl;
+        cout << "**TOTAL - SLICED** " << rows * cols - sliced << endl;
+        cout << "**TOTAL** " << rows * cols << endl << endl;
+        cout << "Rows: " << rows << ". Cols: " << cols << ". MinIngs: " << min_ings << ". Max cells: " << max_cells << endl;
     }
 };
 
@@ -189,13 +196,12 @@ int main ( int argc, char * argv[] ) {
     }
     
     Pizza pizza(ifs);
-    
     pizza.divide();
     
-    // TODO: change to file ostream
-    cout << pizza;
+    ofstream ofs (output);
+    ofs << pizza;
     
-    
+    pizza.printMetrics();
     
     return 0;
 }
