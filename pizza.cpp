@@ -51,7 +51,7 @@ public:
     Slice(uint row_i, uint row_f, uint col_i, uint col_f) : rows(make_pair(row_i, row_f)), cols(make_pair(col_i, col_f)) {}
     
     friend ostream & operator<<(ostream & out, const Slice & s) {
-        out << s.rows.first << " " << s.rows.second << " " << s.cols.first << " " << s.cols.second;
+        out << s.rows.first << " " << s.cols.first << " " << s.rows.second << " " << s.cols.second;
         return out;
     }
 };
