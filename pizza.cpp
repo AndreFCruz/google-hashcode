@@ -126,21 +126,41 @@ public:
     void divide() {
         slices.clear();
         auto sizes = find_all_products(max_cells);
-        bool finished = false;
+        bool finished = false, inner_finished = false;
         
         uint row = 0, col = 0;
         while (! finished) {
-            while (visited[row][col] == true) {
-                if (col < cols) {
+            
+            while (! inner_finished) {
+                if (col < cols && row < rows && visited[row][col] == false) {
+                    inner_finished = true;
+                    break;
+                }
+                if (col < cols)
                     col++;
-                } else if (row < rows) {
+                else if (row < rows) {
                     row++;
                     col = 0;
-                } else {
-                    finished = true;
+                }
+                else {
+                    finished = inner_finished = true;
                     break;
                 }
             }
+            
+            /*
+             while (visited[row][col] == true) {
+             if (col < cols) {
+             col++;
+             } else if (row < rows) {
+             row++;
+             col = 0;
+             } else {
+             finished = true;
+             break;
+             }
+             }
+             */
             
             for (auto choice : sizes) {
                 if (! isValid(row, row + choice.first - 1, col, col + choice.second - 1))
@@ -148,12 +168,11 @@ public:
                 
                 slices.emplace_back(row, row + choice.first - 1, col, col + choice.second - 1);
                 markVisited(row, row + choice.first - 1, col, col + choice.second - 1);
-                row++;
                 col++;
+                break;
             }
             
-            if (row >= rows)
-                finished = true;
+            inner_finished = false;
         }
     }
     
