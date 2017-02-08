@@ -168,9 +168,9 @@ public:
                 
                 slices.emplace_back(row, row + choice.first - 1, col, col + choice.second - 1);
                 markVisited(row, row + choice.first - 1, col, col + choice.second - 1);
-                col++;
                 break;
             }
+            col++;
             
             inner_finished = false;
         }
