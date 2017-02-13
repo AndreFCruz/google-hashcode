@@ -9,6 +9,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
+#include <cmath>
 
 using namespace std;
 
@@ -30,13 +31,22 @@ vector<pair<uint, uint>> find_products(uint n) {
     return result;
 }
 
-/* Finds all ordered pairs of numbers whose product is in range [2, n]
+/* Finds all ordered pairs of numbers whose product is in range [min, max]
  */
-vector<pair<uint, uint>> find_all_products(uint n) {
+vector<pair<uint, uint>> find_all_products(uint min, uint max) {
     vector<pair<uint,uint>> result;
     
-    for (uint i = n; i > 1; --i) {
+    for (uint i = max; i >= min; --i) {
         auto tmp = find_products(i);
+        
+        // Thin and Stretched slices last ?
+        /* This is actually worse
+        sort(tmp.begin(), tmp.end(), [](pair<int,int> p1, pair<int,int> p2) {
+            return pow(p1.first - p1.second, 2) < pow(p2.first - p2.second, 2);
+        } );
+        */
+        
+        //result.insert(result.begin(), tmp.begin(), tmp.end());
         result.insert(end(result), begin(tmp), end(tmp));
     }
     
@@ -120,12 +130,10 @@ public:
     
     /* Divides the pizza in slices so as to minimize unsliced area
      * Naive approach -- to be improved.
-     *
-     * @return the number of cells left unsliced
      */
     void divide() {
         slices.clear();
-        auto sizes = find_all_products(max_cells);
+        auto sizes = find_all_products(min_ings * 2, max_cells);
         bool finished = false, inner_finished = false;
         
         uint row = 0, col = 0;
@@ -147,20 +155,6 @@ public:
                     break;
                 }
             }
-            
-            /*
-             while (visited[row][col] == true) {
-             if (col < cols) {
-             col++;
-             } else if (row < rows) {
-             row++;
-             col = 0;
-             } else {
-             finished = true;
-             break;
-             }
-             }
-             */
             
             for (auto choice : sizes) {
                 if (! isValid(row, row + choice.first - 1, col, col + choice.second - 1))
