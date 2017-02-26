@@ -17,7 +17,7 @@ typedef unsigned int uint;
 string home = "/Users/andre/Documents/Paprika/";
 string fileName = "videos_worth_spreading";
 string fileDest = home + fileName + ".in";
-string fileOut = home + fileName + "6.out";
+string fileOut = home + fileName + "7.out";
 
 
 class Endpoint {
@@ -29,6 +29,7 @@ public:
     uint dc_lat;
     map<uint,uint> cache_lat;
     map<uint,uint> requests;
+    //vector<uint> ordered_caches; // ordered by increasing latency
     
     Endpoint() : id(count++) {};
     
@@ -65,6 +66,18 @@ public:
         return cache_lat[leastLatCache()];
     }
     
+//    bool sortCaches() {
+//        if (cache_lat.empty())
+//            return false;
+//        
+//        ordered_caches.reserve(cache_lat.size());
+//        for (auto p : cache_lat)
+//            ordered_caches.push_back(p.first);
+//        
+//        stable_sort(ordered_caches.begin(), ordered_caches.end(), [&](uint c1, uint c2) {return cache_lat[c1] < cache_lat[c2]; });
+//        
+//        return true;
+//    }
 };
 uint Endpoint::count = 0;
 
@@ -176,6 +189,7 @@ public:
                 edp.cache_lat[id] = c_lat;
             }
             
+//            edp.sortCaches();
             endpoints.push_back(edp);
         }
         
@@ -225,51 +239,81 @@ public:
         
         bool somethingDone;
         
+        do {
+            somethingDone = false;
+            
+            Container max;
+            
+            for (Endpoint & edp : endpoints) {
+//                int video_id, cache_id;
+//                if ( (video_id = edp.mostRequestedVideo()) == -1 ) {
+//                    continue;
+//                }
+//                
+//                if ( (cache_id = edp.leastLatCache()) == -1 ) {
+//                    continue;
+//                }
+//                
+//                if (caches[cache_id].insertVideo(videos[video_id])) {
+//                    edp.requests[video_id] = 0;
+//                    used_caches.insert(cache_id);
+//                    somethingDone = true;
+//                }
+                
+                Container c(edp);
+                
+                if (c.savings > max.savings && caches[c.cache_id].isValid(videos[c.vd_id])) {
+                    max = c;
+                    somethingDone = true;
+                }
+            }
+            
+            if (max.savings == 0)
+                break;
+            
+            if (caches[max.cache_id].insertVideo(videos[max.vd_id])) {
+                endpoints[findEdpIdx(max.edp_id)].requests[max.vd_id] = 0;
+                used_caches.insert(max.cache_id);
+                
+                if (++vids_added % 50 == 0)
+                    cout << "Videos Added: " << vids_added << endl;
+                
+            }
+            else {
+                cout << "\nnot cool vid?\n";
+            }
+            
+        } while(somethingDone);
+        
+        cout << "\nUsing unused caches.\n";
+        // Use unused caches
+        for (Cache & c : caches) {
+            if (used_caches.find(c.id) != used_caches.end()) // Cache in use ?
+                continue;
+            
+            
+            for (Endpoint & edp : endpoints) {
+                if (edp.cache_lat.find(c.id) == edp.cache_lat.end()) // Not Connected to cache ?
+                    continue;
+                
                 do {
                     somethingDone = false;
                     
-                    Container max;
-                    
-                    for (Endpoint & edp : endpoints) {
-//                        int video_id, cache_id;
-//                        if ( (video_id = edp.mostRequestedVideo()) == -1 ) {
-//                            continue;
-//                        }
-//        
-//                        if ( (cache_id = edp.leastLatCache()) == -1 ) {
-//                            continue;
-//                        }
-//        
-//                        if (caches[cache_id].insertVideo(videos[video_id])) {
-//                            edp.requests[video_id] = 0;
-//                            used_caches.insert(cache_id);
-//                            somethingDone = true;
-//                        }
+                    uint vid_idx = edp.mostRequestedVideo();
+                    if (caches[c.id].insertVideo(videos[vid_idx])) {
+                        edp.requests[vid_idx] = 0;
+                        used_caches.insert(c.id);
                         
-                        Container c(edp);
+                        somethingDone = true;
                         
-                        if (c.savings > max.savings && caches[c.cache_id].isValid(videos[c.vd_id])) {
-                            max = c;
-                            somethingDone = true;
-                        }
-                    }
-                    
-                    if (max.savings == 0)
-                        break;
-                    
-                    if (caches[max.cache_id].insertVideo(videos[max.vd_id])) {
-                        endpoints[findEdpIdx(max.edp_id)].requests[max.vd_id] = 0;
-                        used_caches.insert(max.cache_id);
-                        
-                        if (++vids_added % 50 == 0)
+                        if (++vids_added % 20 == 0)
                             cout << "Videos Added: " << vids_added << endl;
-                        
-                    }
-                    else {
-                        cout << "\nnot cool vid?\n";
                     }
                     
                 } while(somethingDone);
+
+            }
+        }
     }
     
     
@@ -301,14 +345,6 @@ int main() {
     
     return 0;
 }
-
-
-
-
-
-
-
-
 
 
 
