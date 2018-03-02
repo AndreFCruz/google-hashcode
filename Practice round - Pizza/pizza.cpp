@@ -1,9 +1,7 @@
 /*
  * Google HashCode 2017
  * Practice Problem - Pizza
- *
- * Author: AndreFCruz
- */
+*/
 
 
 #include <iostream>
